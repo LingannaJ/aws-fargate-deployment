@@ -114,6 +114,24 @@ resource "aws_lb_target_group" "ecs_target_group" {
   }
 }
 
+# Target Group for ECS
+resource "aws_lb_target_group" "ecs_target_group" {
+  name        = "ecs-target-group"
+  port        = 3000 # Must match ECS container's exposed port
+  protocol    = "HTTP"
+  vpc_id      = module.vpc.vpc_id
+  target_type = "ip"
+
+  health_check {
+    interval            = 30
+    path                = "/health" # Health check path of the application
+    timeout             = 5
+    healthy_threshold   = 2
+    unhealthy_threshold = 2
+    matcher             = "200-299"
+  }
+}
+
 # Listener for ALB
 resource "aws_lb_listener" "app_listener" {
   load_balancer_arn = aws_lb.app_alb.arn
