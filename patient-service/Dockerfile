@@ -1,21 +1,22 @@
-# Use a Node.js base image
-FROM node:14
+# Use the official Node.js Alpine image
+FROM node:18-alpine
 
-# Set the working directory inside the container
+# Set the working directory
 WORKDIR /usr/src/app
 
-# Copy package.json and package-lock.json to the working directory
+# Copy package.json and package-lock.json
 COPY package*.json ./
 
-# Install the dependencies
-RUN npm install
+# Install dependencies (without unnecessary npm cache)
+RUN npm install --production && npm cache clean --force
 
-# Copy the application code to the container
+# Copy application source code
 COPY . .
 
-# Expose the port the app runs on
+# Expose the application port
 EXPOSE 3000
 
-# Start the application
-CMD ["node", "patient-service.js"]
+# Command to run the application
+CMD ["node", "app.js"]
+
 

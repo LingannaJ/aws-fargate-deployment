@@ -64,6 +64,91 @@ resource "aws_security_group" "ecs_security_group" {
   }
 }
 
+# ALB Security Group
+resource "aws_security_group" "alb_security_group" {
+  name        = "alb-sg"
+  description = "Allow HTTP traffic to ALB"
+  vpc_id      = module.vpc.vpc_id
+
+  ingress {
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
+# Application Load Balancer
+resource "aws_lb" "app_alb" {
+  name               = "app-alb"
+  internal           = false
+  load_balancer_type = "application"
+  security_groups    = [aws_security_group.alb_security_group.id]
+  subnets            = module.vpc.public_subnets
+
+  enable_deletion_protection = false
+}
+
+# Target Group for ECS Service
+resource "aws_lb_target_group" "ecs_target_group" {
+  name        = "ecs-target-group"
+  port        = 3000
+  protocol    = "HTTP"
+  vpc_id      = module.vpc.vpc_id
+  target_type = "ip"
+
+  health_check {
+    interval            = 30
+    path                = "/health"
+    timeout             = 5
+    healthy_threshold   = 2
+    unhealthy_threshold = 2
+    matcher             = "200-299"
+  }
+}
+
+# Listener for ALB
+resource "aws_lb_listener" "app_listener" {
+  load_balancer_arn = aws_lb.app_alb.arn
+  port              = 80
+  protocol          = "HTTP"
+
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.ecs_target_group.arn
+  }
+}
+
+# Update ECS Service to Use ALB
+resource "aws_ecs_service" "patient_service" {
+  name            = "patient-service"
+  cluster         = aws_ecs_cluster.hackathon_cluster.id
+  task_definition = aws_ecs_task_definition.patient_service.arn
+  launch_type     = "FARGATE"
+
+  network_configuration {
+    subnets         = module.vpc.public_subnets
+    security_groups = [aws_security_group.ecs_security_group.id]
+    assign_public_ip = true
+  }
+
+  load_balancer {
+    target_group_arn = aws_lb_target_group.ecs_target_group.arn
+    container_name   = "patient-service-container"
+    container_port   = 3000
+  }
+
+  depends_on = [aws_lb_listener.app_listener]
+}
+
+
 # ECR Repository
 resource "aws_ecr_repository" "patient_service" {
   name = "patient-service-repo"
