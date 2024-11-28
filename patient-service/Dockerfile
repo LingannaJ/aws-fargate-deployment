@@ -1,22 +1,23 @@
-# Use the official Node.js Alpine image
-FROM node:18-alpine
+# Use the official Node.js image as a base
+FROM node:16
 
-# Set the working directory
+# Set the working directory inside the container
 WORKDIR /usr/src/app
 
-# Copy package.json and package-lock.json
+# Copy package.json and package-lock.json to the working directory
 COPY package*.json ./
 
-# Install dependencies (without unnecessary npm cache)
-RUN npm install --production && npm cache clean --force
+# Install dependencies
+RUN npm install
 
-# Copy application source code
+# Copy the rest of the application files to the working directory
 COPY . .
 
 # Expose the application port
 EXPOSE 3000
 
-# Command to run the application
+# Start the application
 CMD ["node", "app.js"]
+
 
 
