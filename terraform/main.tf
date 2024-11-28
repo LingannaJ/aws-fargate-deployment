@@ -148,6 +148,16 @@ resource "aws_ecs_service" "patient_service" {
   depends_on = [aws_lb_listener.app_listener]
 }
 
+resource "aws_security_group_rule" "ecs_allow_alb" {
+  type                     = "ingress"
+  from_port                = 3000
+  to_port                  = 3000
+  protocol                 = "tcp"
+  security_group_id        = aws_security_group.ecs_security_group.id
+  source_security_group_id = aws_security_group.alb_security_group.id
+}
+
+
 
 # ECR Repository
 resource "aws_ecr_repository" "patient_service" {
