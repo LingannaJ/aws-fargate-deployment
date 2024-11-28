@@ -179,16 +179,3 @@ resource "aws_ecs_task_definition" "patient_service" {
   ])
 }
 
-# ECS Service
-resource "aws_ecs_service" "patient_service" {
-  name            = "patient-service"
-  cluster         = aws_ecs_cluster.hackathon_cluster.id
-  task_definition = aws_ecs_task_definition.patient_service.arn
-  launch_type     = "FARGATE"
-
-  network_configuration {
-    subnets         = module.vpc.public_subnets
-    security_groups = [aws_security_group.ecs_security_group.id]
-    assign_public_ip = true
-  }
-}
