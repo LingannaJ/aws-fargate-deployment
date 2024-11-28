@@ -1,0 +1,23 @@
+name: Deploy to ECS
+
+on:
+  push:
+    paths:
+      - 'ecs/**'
+
+jobs:
+  deploy:
+    name: Deploy to ECS
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Update ECS Service
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+        with:
+          task-definition: ecs/task-definition.json
+          service: patient-service
+          cluster: hackathon-ecs-cluster
+          wait-for-service-stability: true
