@@ -1,13 +1,15 @@
 {
-    "name": "patient-service",
-    "version": "1.0.0",
-    "description": "Patient service microservice",
-    "main": "patient-service.js",
-    "scripts": {
-      "start": "node patient-service.js"
-    },
-    "dependencies": {
-      "express": "^4.18.2"
-    }
-  }
-  
+  "name": "patient-service",
+  "version": "1.0.0",
+  "description": "A simple patient management service built with Express.js",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  },
+  "devDependencies": {},
+  "author": "",
+  "license": "ISC"
+}
