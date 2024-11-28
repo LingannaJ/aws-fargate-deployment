@@ -133,6 +133,7 @@ resource "aws_ecs_service" "patient_service" {
   cluster         = aws_ecs_cluster.hackathon_cluster.id
   task_definition = aws_ecs_task_definition.patient_service.arn
   launch_type     = "FARGATE"
+  desired_count   = 1
 
   network_configuration {
     subnets         = module.vpc.public_subnets
