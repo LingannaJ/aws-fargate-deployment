@@ -169,7 +169,7 @@ resource "aws_ecs_task_definition" "patient_service" {
   container_definitions = jsonencode([
     {
       name      = "patient-service-container"
-      image     = "767397768520.dkr.ecr.us-east-1.amazonaws.com/patient-service:latest" # Replace with your ECR image
+      image     = "767397768520.dkr.ecr.us-east-1.amazonaws.com/patient-service:latest" # Replace with your ECR image here, after pushed to ECR
       cpu       = 256
       memory    = 512
       portMappings = [
@@ -187,3 +187,57 @@ resource "aws_ecs_task_definition" "patient_service" {
     }
   ])
 }
+
+
+# This below script is check the ruuning logs in cloud watch with ECS TASK Defination
+
+# ECR Repository 
+# resource "aws_ecr_repository" "patient_service" {
+#   name = "patient-service-repo"
+# }
+
+# # CloudWatch Log Group for ECS container logs
+# resource "aws_cloudwatch_log_group" "patient_service_log_group" {
+#   name = "/ecs/patient-service"
+# }
+
+# # ECS Task Definition with CloudWatch Logging
+# resource "aws_ecs_task_definition" "patient_service" {
+#   family                   = "patient-service-task"
+#   network_mode             = "awsvpc"
+#   requires_compatibilities = ["FARGATE"]
+#   execution_role_arn       = aws_iam_role.ecs_task_execution_role.arn
+#   task_role_arn            = aws_iam_role.ecs_task_role.arn
+#   cpu                      = "256"
+#   memory                   = "512"
+
+#   container_definitions = jsonencode([{
+#     name        = "patient-service-container"
+#     image       = "767397768520.dkr.ecr.us-east-1.amazonaws.com/patient-service:latest" # Replace with your ECR image here, after pushed to ECR
+#     cpu         = 256
+#     memory      = 512
+#     portMappings = [
+#       {
+#         containerPort = 3000
+#         hostPort      = 3000
+#       }
+#     ]
+#     environment = [
+#       {
+#         name  = "PORT"
+#         value = "3000"
+#       }
+#     ]
+
+#     # CloudWatch Logs Configuration for ECS Container
+#     logConfiguration = {
+#       logDriver = "awslogs"
+#       options = {
+#         "awslogs-group"         = aws_cloudwatch_log_group.patient_service_log_group.name
+#         "awslogs-region"        = "us-east-1"
+#         "awslogs-stream-prefix" = "ecs"
+#       }
+#     }
+#   }])
+# }
+
