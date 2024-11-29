@@ -155,6 +155,8 @@ resource "aws_ecs_service" "patient_service" {
 # ECR Repository
 resource "aws_ecr_repository" "patient_service" {
   name = "patient-service-repo"
+  
+  force_delete = true  # This forces the deletion of the repository and its images
 }
 
 # ECS Task Definition
