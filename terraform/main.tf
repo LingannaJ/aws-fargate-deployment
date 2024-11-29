@@ -169,7 +169,7 @@ resource "aws_ecs_task_definition" "patient_service" {
   container_definitions = jsonencode([
     {
       name      = "patient-service-container"
-      image     = "${aws_ecr_repository.patient_service.repository_url}:latest"
+      image     = "767397768520.dkr.ecr.us-east-1.amazonaws.com/patient-service:latest" # Replace with your ECR image
       cpu       = 256
       memory    = 512
       portMappings = [
