@@ -43,18 +43,11 @@ resource "aws_iam_policy_attachment" "ecs_task_execution_policy" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
 
-# Security Group
+# Security Group for ECS
 resource "aws_security_group" "ecs_security_group" {
   name        = "ecs-sg"
   description = "Allow traffic to ECS services"
   vpc_id      = module.vpc.vpc_id
-
-  ingress {
-    from_port   = 3000
-    to_port     = 3000
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
 
   egress {
     from_port   = 0
@@ -64,7 +57,7 @@ resource "aws_security_group" "ecs_security_group" {
   }
 }
 
-# ALB Security Group
+# Security Group for ALB
 resource "aws_security_group" "alb_security_group" {
   name        = "alb-sg"
   description = "Allow HTTP traffic to ALB"
@@ -83,6 +76,16 @@ resource "aws_security_group" "alb_security_group" {
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
+}
+
+# Security Group Rule for ALB to ECS
+resource "aws_security_group_rule" "ecs_allow_alb" {
+  type                     = "ingress"
+  from_port                = 3000
+  to_port                  = 3000
+  protocol                 = "tcp"
+  security_group_id        = aws_security_group.ecs_security_group.id
+  source_security_group_id = aws_security_group.alb_security_group.id
 }
 
 # Application Load Balancer
@@ -106,14 +109,13 @@ resource "aws_lb_target_group" "ecs_target_group" {
 
   health_check {
     interval            = 30
-    path                = "/health"
+    path                = "/health" # Update if your app health path differs
     timeout             = 5
     healthy_threshold   = 2
     unhealthy_threshold = 2
     matcher             = "200-299"
   }
 }
-
 
 # Listener for ALB
 resource "aws_lb_listener" "app_listener" {
@@ -127,7 +129,7 @@ resource "aws_lb_listener" "app_listener" {
   }
 }
 
-# Update ECS Service to Use ALB
+# ECS Service
 resource "aws_ecs_service" "patient_service" {
   name            = "patient-service"
   cluster         = aws_ecs_cluster.hackathon_cluster.id
@@ -136,9 +138,9 @@ resource "aws_ecs_service" "patient_service" {
   desired_count   = 1
 
   network_configuration {
-    subnets         = module.vpc.public_subnets
+    subnets         = module.vpc.private_subnets # Use private subnets
     security_groups = [aws_security_group.ecs_security_group.id]
-    assign_public_ip = true
+    assign_public_ip = false
   }
 
   load_balancer {
@@ -149,17 +151,6 @@ resource "aws_ecs_service" "patient_service" {
 
   depends_on = [aws_lb_listener.app_listener]
 }
-
-resource "aws_security_group_rule" "ecs_allow_alb" {
-  type                     = "ingress"
-  from_port                = 3000
-  to_port                  = 3000
-  protocol                 = "tcp"
-  security_group_id        = aws_security_group.ecs_security_group.id
-  source_security_group_id = aws_security_group.alb_security_group.id
-}
-
-
 
 # ECR Repository
 resource "aws_ecr_repository" "patient_service" {
@@ -187,7 +178,12 @@ resource "aws_ecs_task_definition" "patient_service" {
           hostPort      = 3000
         }
       ]
+      environment = [
+        {
+          name  = "PORT"
+          value = "3000"
+        }
+      ]
     }
   ])
 }
-
