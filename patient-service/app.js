@@ -1,7 +1,7 @@
 const express = require('express');
 const app = express();
-const port = process.env.PORT || 3000;
 
+// Middleware to parse JSON bodies
 app.use(express.json());
 
 // In-memory data store (replace with a database in a real application)
@@ -10,27 +10,32 @@ let patients = [
   { id: '2', name: 'Jane Smith', age: 45, condition: 'Hypertension' }
 ];
 
-// Health check endpoint
+// Root route to avoid "Cannot GET /" error
+app.get('/', (req, res) => {
+  res.send('Welcome to the Patient Service');
+});
+
+// Health check route
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'OK', service: 'Patient Service' });
 });
 
 // Get all patients
 app.get('/patients', (req, res) => {
-  res.json({
+  res.json({ 
     message: 'Patients retrieved successfully',
     count: patients.length,
-    patients: patients
+    patients: patients 
   });
 });
 
-// Get patient by ID
+// Get a specific patient by ID
 app.get('/patients/:id', (req, res) => {
   const patient = patients.find(p => p.id === req.params.id);
   if (patient) {
-    res.json({
+    res.json({ 
       message: 'Patient found',
-      patient: patient
+      patient: patient 
     });
   } else {
     res.status(404).json({ error: 'Patient not found' });
@@ -51,16 +56,13 @@ app.post('/patients', (req, res) => {
       condition: condition || 'Not specified'
     };
     patients.push(newPatient);
-    res.status(201).json({
+    res.status(201).json({ 
       message: 'Patient added successfully',
-      patient: newPatient
+      patient: newPatient 
     });
   } catch (error) {
     res.status(500).json({ error: 'Internal server error' });
   }
 });
 
-// Start the Express server
-app.listen(port, '0.0.0.0', () => {
-  console.log(`Patient service listening at http://0.0.0.0:${port}`);
-});
+module.exports = app; // Export app to be used in index.js

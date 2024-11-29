@@ -1,24 +1,24 @@
-# Use the official Node.js image with a smaller base image (e.g., "node:16-slim")
-FROM node:alpine3.20
+# Use the official Node.js image (alpine variant for smaller size)
+FROM node:16-alpine
 
 # Set the working directory inside the container
 WORKDIR /usr/src/app
 
-# Copy only the package.json and package-lock.json for installing dependencies
+# Copy package.json and package-lock.json to install dependencies
 COPY package*.json ./
 
-# Install production dependencies only
+# Install only production dependencies
 RUN npm install --production
 
-# Copy the rest of the application files to the working directory
-# Avoid copying unnecessary files like node_modules, logs, etc.
+# Copy the rest of the application files
 COPY . .
 
-# Expose the application port
+# Expose the application port (default 3000)
 EXPOSE 3000
 
-# Start the application
-CMD ["node", "app.js"]
+# Start the application with an environment variable for PORT
+CMD ["node", "index.js"]
+
 
 
 
