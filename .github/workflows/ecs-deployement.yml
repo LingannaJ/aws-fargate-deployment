@@ -1,41 +1,29 @@
-name: CI/CD Pipeline
+name: ECS Deployment
 
 on:
   push:
     branches:
-      - main
+      - main  # Trigger when pushing to the main branch
 
 jobs:
-  build-and-deploy:
+  deploy_to_ecs:
     runs-on: ubuntu-latest
 
     steps:
-    # Checkout code
-    - name: Checkout code
-      uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-    # Log in to AWS ECR
-    - name: Log in to Amazon ECR
-      id: ecr-login
-      uses: aws-actions/amazon-ecr-login@v2
+      - name: Set up AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws_region: ${{ secrets.AWS_REGION }}
 
-    # Build, Tag, and Push Docker Image
-    - name: Build, tag, and push Docker image
-      env:
-        ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
-        AWS_REGION: ${{ secrets.AWS_REGION }}
-      run: |
-        IMAGE_TAG=latest
-        docker build -t $ECR_REPOSITORY:$IMAGE_TAG .
-        docker tag $ECR_REPOSITORY:$IMAGE_TAG ${{ steps.ecr-login.outputs.registry }}/$ECR_REPOSITORY:$IMAGE_TAG
-        docker push ${{ steps.ecr-login.outputs.registry }}/$ECR_REPOSITORY:$IMAGE_TAG
-
-    # Deploy to ECS
-    - name: Deploy to Amazon ECS
-      uses: aws-actions/amazon-ecs-deploy-task-definition@v2
-      with:
-        cluster: ${{ secrets.CLUSTER_NAME }}
-        service: ${{ secrets.SERVICE_NAME }}
-        region: ${{ secrets.AWS_REGION }}
-        task-definition: patient-service-task
-        image: ${{ steps.ecr-login.outputs.registry }}/${{ secrets.ECR_REPOSITORY }}:latest
+      - name: Update ECS Service
+        run: |
+          aws ecs update-service \
+            --cluster ${{ secrets.CLUSTER_NAME }} \
+            --service ${{ secrets.SERVICE_NAME }} \
+            --force-new-deployment \
+            --region ${{ secrets.AWS_REGION }}
