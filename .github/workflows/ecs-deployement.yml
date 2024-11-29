@@ -1,23 +1,41 @@
-name: Deploy to ECS
+name: CI/CD Pipeline
 
 on:
   push:
-    paths:
-      - 'ecs/**'
+    branches:
+      - main
 
 jobs:
-  deploy:
-    name: Deploy to ECS
+  build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
+    # Checkout code
+    - name: Checkout code
+      uses: actions/checkout@v3
 
-      - name: Update ECS Service
-        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
-        with:
-          task-definition: ecs/task-definition.json
-          service: patient-service
-          cluster: hackathon-ecs-cluster
-          wait-for-service-stability: true
+    # Log in to AWS ECR
+    - name: Log in to Amazon ECR
+      id: ecr-login
+      uses: aws-actions/amazon-ecr-login@v2
+
+    # Build, Tag, and Push Docker Image
+    - name: Build, tag, and push Docker image
+      env:
+        ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
+        AWS_REGION: ${{ secrets.AWS_REGION }}
+      run: |
+        IMAGE_TAG=latest
+        docker build -t $ECR_REPOSITORY:$IMAGE_TAG .
+        docker tag $ECR_REPOSITORY:$IMAGE_TAG ${{ steps.ecr-login.outputs.registry }}/$ECR_REPOSITORY:$IMAGE_TAG
+        docker push ${{ steps.ecr-login.outputs.registry }}/$ECR_REPOSITORY:$IMAGE_TAG
+
+    # Deploy to ECS
+    - name: Deploy to Amazon ECS
+      uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+      with:
+        cluster: ${{ secrets.CLUSTER_NAME }}
+        service: ${{ secrets.SERVICE_NAME }}
+        region: ${{ secrets.AWS_REGION }}
+        task-definition: patient-service-task
+        image: ${{ steps.ecr-login.outputs.registry }}/${{ secrets.ECR_REPOSITORY }}:latest
